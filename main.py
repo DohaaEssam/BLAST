@@ -1,3 +1,4 @@
+
 import numpy as np
 from textwrap import wrap
 
@@ -73,7 +74,7 @@ blosum62 = {
     ('B', 'F'): -3, ('F', 'L'): 0, ('X', 'Q'): -1, ('B', 'B'): 4
 }
 newSequence = []
-Sequence=input("enter the sequence")
+sequence=input("enter the sequence")
 WordLength=int(input("enter the Word Length"))
 # convert list to string
 def Convert(str):
@@ -88,42 +89,55 @@ def listToString(s):
     return str1
 
 #step 1 Removing low complexity
+aminoValues={'A':4,'C':9,'D':6,'E':5,
+             'F':6,'G':6,'H':8,'I':4,
+             'K':5,'L':4,'M':5,'N':6,
+              'P':7,'Q':5,'R':5,'S':4,
+             'T':5,'V':4,'W':11,'Y':7}
 
-def cancel_repeated(sequence, min, max, index):
-    if max + 1 >= len(sequence) + 1 or max + 1 == len(sequence) + 1:
-        if min + 1 != len(sequence):
-            newSequence.insert(index, sequence[min])
-            cancel_repeated(sequence, min + 1, max + 1, index + 1)
-    elif sequence[min] == sequence[max] and sequence[min + 1] == sequence[max + 1]:
-        cancel_repeated(sequence, min + 2, max + 2, index)
-    elif sequence[max] == sequence[max - 2]:
-        cancel_repeated(sequence, min + 2, max + 2, index)
-    elif sequence[min] == sequence[max] and sequence[min + 1] != sequence[max + 1]:
-        cancel_repeated(sequence, min + 1, max + 2, index)
-    else:
-        newSequence.insert(index, sequence[min])
-        cancel_repeated(sequence, min + 1, max + 1, index + 1)
-    return newSequence
+def cancel_repeated(sequence):
+    val=[]
+    seqvalues=[]
+    list1 = list(sequence)
+    for i in range(len(sequence)):
+        if list1[i] in aminoValues:
+            seqvalues.append(aminoValues.get(list1[i]))
+
+    for i in range(len(sequence)):
+        k=1
+        for j in range(len(sequence[i:])):
+            tmp=seqvalues[i:i+k]
+            if j==k*2-1:
+                for q in range(len(aminoValues)):
+
+                    if tmp==seqvalues[i+k:i+j+1] :
+                        val.extend(range(i,i+k*2))
+                k+=1
+    sequenceList=list(sequence)
+    for val1 in val:
+        sequenceList[val1]="X"
+    sequence=''.join(sequenceList)
+
+    return sequence
+
+Sequence = cancel_repeated(sequence)
+print(" The Sequence ")
+print(Sequence)
+
 
 # step 2 , Make a W-lette
-
-#seq = cancel_repeated(Sequence, 0, 2, 0)
-print("New Sequence ")
-#print(seq)
-
 def QuerySequence (seq):
     words = []
     for i in range(0, len(seq)):
         str = ""
-        for j in range(i, i + 3):
+        for j in range(i, i + WordLength):
             if (j == len(seq)):
                 break
             else:
                 str += seq[j]
-            if (len(str) == 3):
+            if (len(str) == WordLength):
                 words.append(str)
     return words
-
 
 #step 3 , all possible matches
 
@@ -133,9 +147,10 @@ def NeighborhoodWords(word, aminoacids):
     str1 = ""
     Neighbors = ""
     possibles = []
-
+    counter=0
     for i in range(0, len(word)):
         x =[]
+        counter=0
         x.append(word[i])
         for j in range(0, WordLength):
             for k in range(0, len(aminoacids)):
@@ -143,7 +158,11 @@ def NeighborhoodWords(word, aminoacids):
                 Neighbors = list(str1)
                 Neighbors[j] = aminoacids[k]
                 str1 = listToString(Neighbors)
-                x.append(str1)
+                if str1 != word[i]:
+                    x.append(str1)
+                if str1 == word[i] and counter == 0:
+                    counter = counter + 1
+                    x.append(str1)
         possibles.append(x)
 
     return possibles
@@ -154,16 +173,14 @@ print("The Words")
 r = NeighborhoodWords(word, aminoacids)
 print(r)
 
-
-
 Threshold=input("Enter the Threshold")
-# Step3 and 4
-#Calculating the score
+
+# step 3 and 4 , Calculating the score
 def CreatingSeed(r, word):
     Seeds = []
     T = []
     for m in range(len(word)):
-        for n in range(1,60):
+        for n in range(1,len(r[m])):
             T = []
             score = 0
             for i in range(WordLength):
@@ -182,7 +199,8 @@ s = CreatingSeed(r, word)
 print("The Seeds is")
 print(s)
 
-#Step5
+#Step5:Search in database
+
 Database = [
  "PQGMMKSFFLVVTILALTLPFLGAQEQNQEQPIRCEKDERFFSDKIAKYIPIQYVLSRYPSYGLNYYQQKPVALINNQFLPYPYYAKPAAVRSPAQILQWQVLSNTVPAKSCQAQPTTMARHPHPHLSFMAIPPKKNQDKTEIPTINTIASGEPTSTPTTEAVESTVATLEDSPEVIESPPEINTVQVTSTAV",
  "MKLFWLLFTIGFCWAQYSSNTQQGRTSIVHLFEWRWVDIALECERYLAPKGFGGVQVSPPNENVAIHNPFRPWWERYQPVSYKLCTRSGNEDEFRNMVTRCNNVGVRIYVDAVINHMCGNAVSAGTSSTCGSYFNPGSRDFPAVPYSGWDFNDGKCKTGSGDIENYNDATQVRDCRLSGLLDLALGKDYVRSKIAEYMNHLIDIGVAGFRIDASKHMWPGDIKAILDKLHNLNSNWFPEGSKPFIYQEVIDLGGEPIKSSDYFGNGRVTEFKYGAKLGTVIRKWNGEKMSYLKNWGEGWGFMPSDRALVFVDNHDNQRGHGAGGASILTFWDARLYKMAVGFMLAHPYGFTRVMSSYRWPRYFENGKDVNDWVGPPNDNGVTKEVTINPDTTCGNDWVCEHRWRQIRNMVNFRNVVDGQPFTNWYDNGSNQVAFGRGNRGFIVFNNDDWTFSLTLQTGLPAGTYCDVISGDKINGNCTGIKIYVSDDGKAHFSISNSAED",
@@ -205,48 +223,51 @@ def WordHits(Seeds):
                     L.append(DbL)
     return L
 
+
 l = WordHits(s)
 print("Words Hits at")
 print(l)
+
+#step 6:Extension of the seed
 HSPThreshold=input("Enter the HSP Threshold")
 HSP=[]
-#step 6
+ENTERED=False
 
-for i in range(len(l)):
-    for x in range(len(r)):
-        for z in range(1,len(r[x])):
-           if l[i][0]==r[x][z]:
-               for n in range(len(Sequence) - WordLength + 1):
-                   gaber = ""
-                   Dw=""
-                   sc=0
-                   hsp=[]
-                   WHILE = True
-                   for m in range(n,WordLength):
-                       gaber = gaber + Sequence[m]
-                       if gaber==r[x][0]:
-                           while WHILE==True:
-                               if n - 1 >= 0 and n + WordLength + 1<len(Sequence):
-                                   for d in range(len(Database)):
-                                       for w in range(len(gaber)):
-                                           Dw=Dw+Database[d]
-                                           if Dw==r[x][1] and d-1>=0and d+ WordLength + 1<len(Database):
-                                               Dw= Database[d-1]+Dw+ Database[d+ WordLength + 1]
-                                               gaber = Sequence[n - 1] + gaber + Sequence[n + WordLength + 1]
-                                               sc = blosum62[Database[d-1], Sequence[n - 1]] + l[i][1]
-                                               sc = blosum62[Database[d + WordLength + 1], Sequence[n + WordLength + 1]] + sc
-                                               if sc<HSPThreshold:
-                                                   hsp.append(gaber)
-                                                   hsp.append(sc)
-                                                   HSP.append(hsp)
-                                                   WHILE=False
-                               else:
-                                   hsp.append(r[x][z])
-                                   hsp.append(l[i][1])
-                                   HSP.append(hsp)
-                                   WHILE = False
+def Extension(Sequence, WordLength, Database , l ,HSPThreshold) :
+    for i in range(len(l)):
+        for x in range(len(r)):
+            for z in range(1, len(r[x])):
+               if l[i][0] == r[x][z]:
+                   for n in range(len(Sequence) - WordLength + 1):
+                       str2 = ""
+                       Dw=""
+                       sc=0
+                       hsp=[]
+                       WHILE = True
+                       for m in range(n,WordLength):
+                           str2 = str2 + Sequence[m]
+                           if str2 == r[x][0]:
+                               while WHILE == True:
+                                   if n - 1 >= 0 and n + WordLength + 1<len(Sequence):
+                                       ENTERED = True
+                                       for d in range(len(Database)):
+                                           for w in range(len(str2)):
+                                               Dw=Dw+Database[d]
+                                               if Dw == r[x][1] and d-1 >= 0 and d + WordLength + 1 < len(Database):
+                                                   Dw = Database[d-1]+Dw + Database[d + WordLength + 1]
+                                                   str2 = Sequence[n - 1] + str2 + Sequence[n + WordLength + 1]
+                                                   sc = blosum62[Database[d-1], Sequence[n - 1]] + l[i][1]
+                                                   sc = blosum62[Database[d + WordLength + 1], Sequence[n + WordLength + 1]] + sc
+                                                   if sc < HSPThreshold:
+                                                       hsp.append(str2)
+                                                       hsp.append(sc)
+                                                       HSP.append(hsp)
+                                                       WHILE=False
+                                   else:
+                                       hsp.append(r[x][z])
+                                       hsp.append(l[i][1])
+                                       HSP.append(hsp)
+                                       WHILE = False
+    return HSP
 
-print(HSP)
-
-
-
+print(Extension(Sequence,WordLength ,Database , l , HSPThreshold))
